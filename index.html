@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bill.com Simulation — Append to Master Excel</title>
+  <style>
+    :root{
+      --bg:#f4f7fb; --card:#fff; --accent:#0B6E99; --muted:#6b7280; --success:#16a34a;
+      --shadow: 0 4px 12px rgba(11,110,153,0.08);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    body{background:var(--bg); margin:0; padding:20px; color:#0f172a;}
+    .container{max-width:980px; margin:0 auto;}
+    .header{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
+    .logo{width:48px; height:48px; border-radius:8px; background:linear-gradient(135deg,#0B6E99,#67C0DE); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700;}
+    h1{margin:0; font-size:18px;}
+    p.lead{margin:4px 0 0; color:var(--muted); font-size:13px;}
+    .card{background:var(--card); padding:14px; border-radius:10px; box-shadow:var(--shadow); margin-bottom:12px;}
+    label{display:block; font-size:13px; margin-bottom:6px; color:#0f172a;}
+    input[type="text"], input[type="date"], input[type="number"], select, textarea{width:100%; padding:10px 12px; border:1px solid #e6e9ef; border-radius:8px; font-size:14px; box-sizing:border-box;}
+    textarea{min-height:90px; resize:vertical;}
+    .small{font-size:13px; color:var(--muted); margin-top:6px;}
+    .row{display:flex; gap:12px;}
+    .btn{background:var(--accent); color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600;}
+    .btn.ghost{background:transparent; color:var(--accent); border:1px solid rgba(11,110,153,0.12);}
+    .vendor-box{display:flex; gap:8px; align-items:center;}
+    .file-preview{border:1px dashed #d1d5db; padding:10px; border-radius:8px; text-align:center;}
+    .muted{color:var(--muted); font-size:13px;}
+    .summary{background:#f9fffb; border:1px solid #dff3e6; padding:12px; border-radius:8px; color:var(--success);}
+    .footer{display:flex; justify-content:flex-end; gap:8px; margin-top:10px;}
+    .chip{display:inline-block; padding:6px 8px; background:#eef6fb; border-radius:999px; color:var(--accent); font-weight:600; font-size:13px;}
+    .help{font-size:13px; color:#0f172a; background:#fff; padding:10px; border-radius:8px; border:1px solid #eef2ff;}
+    .hidden{display:none;}
+    .notice{background:#fff8e6; border:1px solid #ffe8a3; padding:10px; border-radius:8px; color:#7a4a00; font-size:13px;}
+    .flex{display:flex; gap:8px; align-items:center;}
+    .status{padding:8px; border-radius:8px; background:#eef7ff; color:#034a63; font-weight:600;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">B</div>
+      <div>
+        <h1>Bill.com Simulation — Append to Master Excel</h1>
+        <p class="lead">Load a master Excel file (optional) and append your submission. Trainer can start with a blank master file with headers.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Master File (optional)</h3>
+      <p class="small">If you have a master Excel file from the trainer, upload it here. If not, the simulation will create a new workbook with the correct headers.</p>
+      <input id="masterFile" type="file" accept=".xlsx,.xls" />
+      <div id="masterStatus" class="small muted" style="margin-top:8px;">No master file loaded.</div>
+      <div class="small muted" style="margin-top:6px;">Expected headers (if creating new): Trainee Name, Timestamp, Vendor, Vendor Address, Vendor Email, Invoice Number, PO Number, Invoice Date, Due Date, Payment Terms, Amount, Bill Description, Frequency, Account, Approver, Uploaded File</div>
+    </div>
+
+    <div class="card">
+      <label>Trainee Name</label>
+      <input id="traineeName" type="text" placeholder="Enter your full name" />
+      <div class="small muted">This name will be appended to the master file.</div>
+    </div>
+
+    <div class="card">
+      <h3>Upload Invoice (optional)</h3>
+      <input id="invoiceFile" type="file" accept=".pdf,image/*" />
+      <div id="fileInfo" class="file-preview small muted hidden" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="card">
+      <h3>Vendor & Bill</h3>
+      <div class="vendor-box">
+        <select id="vendorSelect">
+          <option value="">-- Select vendor --</option>
+          <option>Acme Supplies</option>
+          <option>HealthPro Services</option>
+          <option>LabGear Inc</option>
+        </select>
+        <button type="button" class="btn ghost" id="btnAddVendor">+ Add New Vendor</button>
+      </div>
+      <div id="newVendorBox" class="hidden" style="margin-top:12px;">
+        <label>New Vendor Name</label>
+        <input id="newVendorName" type="text" placeholder="Vendor name" />
+        <label style="margin-top:8px;">New Vendor Address</label>
+        <input id="newVendorAddr" type="text" placeholder="Address" />
+        <label style="margin-top:8px;">New Vendor Email</label>
+        <input id="newVendorEmail" type="text" placeholder="Email (use accounting@roarmed.com if unknown)" />
+        <div style="margin-top:8px;"><button id="addVendorConfirm" class="btn">Add vendor</button></div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label>Vendor Address</label>
+        <input id="vendorAddress" type="text" placeholder="Address (auto-filled when vendor selected)" />
+      </div>
+      <div style="margin-top:12px;">
+        <label>Vendor Email</label>
+        <input id="vendorEmail" type="text" value="" placeholder="Email (will suggest accounting@roarmed.com)" />
+      </div>
+
+      <label style="margin-top:12px;">Invoice Number <span class="muted">(use YYYY-MM-DD if missing)</span></label>
+      <input id="invoiceNumber" type="text" placeholder="e.g., 2025-08-10" />
+      <label style="margin-top:8px;">PO Number</label>
+      <input id="poNumber" type="text" />
+      <div class="row" style="margin-top:8px;">
+        <div style="flex:1;">
+          <label>Invoice Date</label>
+          <input id="invoiceDate" type="date" />
+        </div>
+        <div style="width:160px;">
+          <label>Due Date</label>
+          <input id="dueDate" type="date" />
+        </div>
+      </div>
+      <label style="margin-top:8px;">Payment Terms</label>
+      <input id="paymentTerms" type="text" placeholder="e.g., Net 30" />
+      <label style="margin-top:8px;">Amount</label>
+      <input id="amount" type="number" step="0.01" placeholder="0.00" />
+      <label style="margin-top:8px;">Bill Description</label>
+      <textarea id="billDesc" placeholder="Always click 'Use this for expense description' in Bill.com..."></textarea>
+    </div>
+
+    <div class="card">
+      <h3>Frequency & Account</h3>
+      <label>Bill Frequency</label>
+      <select id="billFreq">
+        <option value="one">One time</option>
+        <option value="rec">Recurring</option>
+      </select>
+      <div id="recOptions" class="hidden" style="margin-top:8px;">
+        <label>Recurring Interval</label>
+        <select id="recInterval">
+          <option>Monthly</option>
+          <option>Quarterly</option>
+          <option>Annually</option>
+        </select>
+      </div>
+      <label style="margin-top:8px;">Account (Chart of Accounts)</label>
+      <select id="chartAccount">
+        <option>-- Select account --</option>
+        <option>4100 - Office Supplies</option>
+        <option>4200 - Professional Services</option>
+        <option>4300 - Lab Equipment</option>
+        <option>5000 - Rent Expense</option>
+      </select>
+      <label style="margin-top:8px;">Approver</label>
+      <input id="approver" type="text" value="Ari Resnik" />
+    </div>
+
+    <div class="card footer" style="justify-content:flex-end;">
+      <div class="flex">
+        <button id="btnPreview" class="btn ghost">Preview</button>
+        <button id="btnSave" class="btn">Append to Master & Download</button>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;" class="notice">
+      Tip: Trainer can prepare a blank master file with headers. If you don't load a master, a new workbook will be created automatically.
+    </div>
+
+    <div style="margin-top:12px;" id="statusArea"></div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="hidden" style="position:fixed; inset:0; display:flex; align-items:center; justify-content:center;">
+    <div style="background:rgba(2,6,23,0.6); position:absolute; inset:0;"></div>
+    <div style="background:#fff; width:720px; border-radius:10px; padding:18px; z-index:10; box-shadow:0 10px 30px rgba(2,6,23,0.2);">
+      <h3 style="margin-top:0;">Preview Bill Entry</h3>
+      <div id="modalContent" style="max-height:440px; overflow:auto;"></div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+        <button id="modalClose" class="btn ghost">Close</button>
+        <button id="modalSave" class="btn">Confirm & Append</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SheetJS CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <script>
+    // Elements
+    const masterFileInput = document.getElementById('masterFile');
+    const masterStatus = document.getElementById('masterStatus');
+    const statusArea = document.getElementById('statusArea');
+    let masterWB = null;
+    let masterFilename = null;
+    let sheetName = 'Entries';
+
+    const traineeName = document.getElementById('traineeName');
+    const invoiceFile = document.getElementById('invoiceFile');
+    const fileInfo = document.getElementById('fileInfo');
+    const vendorSelect = document.getElementById('vendorSelect');
+    const btnAddVendor = document.getElementById('btnAddVendor');
+    const newVendorBox = document.getElementById('newVendorBox');
+    const addVendorConfirm = document.getElementById('addVendorConfirm');
+    const newVendorName = document.getElementById('newVendorName');
+    const newVendorAddr = document.getElementById('newVendorAddr');
+    const newVendorEmail = document.getElementById('newVendorEmail');
+    const vendorAddress = document.getElementById('vendorAddress');
+    const vendorEmail = document.getElementById('vendorEmail');
+    const billFreq = document.getElementById('billFreq');
+    const recOptions = document.getElementById('recOptions');
+    const recInterval = document.getElementById('recInterval');
+    const btnPreview = document.getElementById('btnPreview');
+    const modal = document.getElementById('modal');
+    const modalContent = document.getElementById('modalContent');
+    const modalClose = document.getElementById('modalClose');
+    const modalSave = document.getElementById('modalSave');
+    const invoiceNumber = document.getElementById('invoiceNumber');
+    const invoiceDate = document.getElementById('invoiceDate');
+    const dueDate = document.getElementById('dueDate');
+    const amount = document.getElementById('amount');
+    const approver = document.getElementById('approver');
+    const chartAccount = document.getElementById('chartAccount');
+    const billDesc = document.getElementById('billDesc');
+    const poNumber = document.getElementById('poNumber');
+    const paymentTerms = document.getElementById('paymentTerms');
+
+    // Utility to show status
+    function setStatus(msg, ok=true){
+      statusArea.innerHTML = '<div class="status">'+msg+'</div>';
+      setTimeout(()=>{ if(statusArea.innerHTML) statusArea.innerHTML = ''; }, 5000);
+    }
+
+    // Read master workbook when uploaded
+    masterFileInput.addEventListener('change', (e)=>{
+      const f = e.target.files[0];
+      if(!f) return;
+      masterFilename = f.name;
+      const reader = new FileReader();
+      reader.onload = function(evt){
+        const data = evt.target.result;
+        try{
+          masterWB = XLSX.read(data, {type:'array'});
+          // choose first sheet if exists, else create 'Entries'
+          sheetName = masterWB.SheetNames[0] || 'Entries';
+          masterStatus.textContent = 'Loaded master: ' + masterFilename + ' (sheet: ' + sheetName + ')';
+          setStatus('Master file loaded successfully');
+        } catch(err){
+          console.error(err);
+          masterStatus.textContent = 'Error reading master file. A new master will be created.';
+          masterWB = null;
+        }
+      };
+      reader.readAsArrayBuffer(f);
+    });
+
+    // File upload handler (invoice)
+    invoiceFile.addEventListener('change', (e)=>{
+      const f = e.target.files[0];
+      if(!f) return;
+      fileInfo.classList.remove('hidden');
+      fileInfo.innerHTML = `<strong>${f.name}</strong> <div class="muted">${Math.round(f.size/1024)} KB</div>`;
+      const match = f.name.match(/(\\d{4}-\\d{2}-\\d{2})/);
+      if(match && !invoiceNumber.value) invoiceNumber.value = match[1];
+    });
+
+    vendorSelect.addEventListener('change', ()=>{
+      const v = vendorSelect.value;
+      if(v === 'Acme Supplies'){
+        vendorAddress.value = '101 Acme Road';
+        vendorEmail.value = 'payables@acme.com';
+      } else if(v === 'HealthPro Services'){
+        vendorAddress.value = '23 Wellness Ave';
+        vendorEmail.value = 'billing@healthpro.com';
+      } else if(v === 'LabGear Inc'){
+        vendorAddress.value = '77 Lab St';
+        vendorEmail.value = 'invoices@labgear.com';
+      } else {
+        vendorAddress.value = '';
+        vendorEmail.value = '';
+      }
+    });
+
+    btnAddVendor.addEventListener('click', ()=> newVendorBox.classList.toggle('hidden'));
+    addVendorConfirm.addEventListener('click', ()=>{
+      const name = newVendorName.value.trim();
+      const addr = newVendorAddr.value.trim();
+      const email = newVendorEmail.value.trim() || 'accounting@roarmed.com';
+      if(!name){ alert('Enter vendor name'); return; }
+      const opt = document.createElement('option');
+      opt.text = name;
+      vendorSelect.add(opt, vendorSelect[1]);
+      vendorSelect.value = name;
+      vendorAddress.value = addr;
+      vendorEmail.value = email;
+      newVendorBox.classList.add('hidden');
+      newVendorName.value=''; newVendorAddr.value=''; newVendorEmail.value='';
+      setStatus('New vendor added (simulated)');
+    });
+
+    billFreq.addEventListener('change', ()=>{
+      if(billFreq.value === 'rec') recOptions.classList.remove('hidden');
+      else recOptions.classList.add('hidden');
+    });
+
+    // Preview
+    btnPreview.addEventListener('click', ()=>{
+      if(!traineeName.value.trim()){ alert('Please enter Trainee Name.'); return; }
+      if(!vendorSelect.value){ alert('Please select or add a vendor.'); return; }
+      if(!invoiceDate.value){ alert('Please enter Invoice Date.'); return; }
+      if(!dueDate.value){ alert('Please enter Due Date.'); return; }
+      if(!amount.value){ alert('Please enter Amount.'); return; }
+      const html = `
+        <div style="display:grid; gap:8px; font-size:14px;">
+          <div><strong>Trainee:</strong> ${traineeName.value}</div>
+          <div><strong>Vendor:</strong> ${vendorSelect.value}</div>
+          <div><strong>Invoice #:</strong> ${invoiceNumber.value || '(auto-generated)'}</div>
+          <div><strong>Invoice Date:</strong> ${invoiceDate.value}</div>
+          <div><strong>Due Date:</strong> ${dueDate.value}</div>
+          <div><strong>PO #:</strong> ${poNumber.value || '-'}</div>
+          <div><strong>Amount:</strong> ${parseFloat(amount.value).toFixed(2)}</div>
+          <div><strong>Account:</strong> ${chartAccount.value}</div>
+          <div><strong>Frequency:</strong> ${billFreq.value === 'rec' ? 'Recurring - '+recInterval.value : 'One time'}</div>
+          <div><strong>Approver:</strong> ${approver.value}</div>
+          <div><strong>Description:</strong> <div style="margin-top:6px; padding:8px; background:#fafafa; border-radius:6px; border:1px solid #eef2ff;">${billDesc.value || '-'}</div></div>
+        </div>
+      `;
+      modalContent.innerHTML = html;
+      modal.classList.remove('hidden');
+    });
+
+    modalClose.addEventListener('click', ()=> modal.classList.add('hidden'));
+
+    // Build row object from form
+    function buildRow(filename){
+      const now = new Date();
+      const timestamp = now.toISOString();
+      return {
+        'Trainee Name': traineeName.value.trim(),
+        'Timestamp': timestamp,
+        'Vendor': vendorSelect.value,
+        'Vendor Address': vendorAddress.value,
+        'Vendor Email': vendorEmail.value || 'accounting@roarmed.com',
+        'Invoice Number': invoiceNumber.value || '',
+        'PO Number': poNumber.value || '',
+        'Invoice Date': invoiceDate.value,
+        'Due Date': dueDate.value,
+        'Payment Terms': paymentTerms.value || '',
+        'Amount': parseFloat(amount.value).toFixed(2),
+        'Bill Description': billDesc.value || '',
+        'Frequency': billFreq.value === 'rec' ? 'Recurring - '+recInterval.value : 'One time',
+        'Account': chartAccount.value,
+        'Approver': approver.value,
+        'Uploaded File': filename || ''
+      };
+    }
+
+    // Append row to masterWB and trigger download
+    modalSave.addEventListener('click', ()=>{
+      modal.classList.add('hidden');
+      const file = invoiceFile.files[0];
+      const filename = file ? file.name : '';
+      const row = buildRow(filename);
+
+      // If no master workbook loaded -> create one with headers
+      if(!masterWB){
+        masterWB = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet([row], {header: Object.keys(row)});
+        XLSX.utils.book_append_sheet(masterWB, ws, sheetName);
+        masterStatus.textContent = 'Created new master workbook in-memory.';
+        setStatus('Master workbook created (in-memory).');
+      } else {
+        // Master exists: append to first sheet
+        const firstSheet = masterWB.SheetNames[0];
+        const ws = masterWB.Sheets[firstSheet];
+        // Convert to JSON, append, then rebuild sheet
+        const data = XLSX.utils.sheet_to_json(ws, {defval: ''});
+        data.push(row);
+        const newWs = XLSX.utils.json_to_sheet(data, {header: Object.keys(row)});
+        masterWB.Sheets[firstSheet] = newWs;
+        setStatus('Appended entry to loaded master workbook.');
+      }
+
+      // Prepare filename for download
+      const safeName = (masterFilename || 'master').replace(/\s+/g,'_').replace(/[^a-z0-9_\-\.]/ig,'');
+      const now = new Date();
+      const stamp = now.toISOString().slice(0,19).replace(/[:T]/g,'-');
+      const outName = `${safeName.replace(/\.xlsx?$/i,'')}_updated_${stamp}.xlsx`;
+
+      // Download updated workbook
+      XLSX.writeFile(masterWB, outName);
+      setStatus('Updated master downloaded: ' + outName);
+      alert('Updated master file downloaded. Trainer can collect and consolidate these files.');
+    });
+  </script>
+</body>
+</html>
